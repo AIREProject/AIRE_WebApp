@@ -144,7 +144,7 @@ npm.cmd run dev
 | `VITE_API_BASE_URL` | 빈 값 | Browser가 호출할 명시적 API Origin. 비우면 Same-origin 사용 |
 | `VITE_DEV_API_PROXY_TARGET` | 배포 Backend | Vite 개발 Proxy Target |
 | `VITE_MEMORY_ENABLED` | `true` | Memory Tab 활성화 |
-| `VITE_MEMORY_REVIEW_ENABLED` | `false` | Memory Candidate Review 활성화 |
+| `VITE_MEMORY_REVIEW_ENABLED` | `true` | Memory Candidate Review 활성화 |
 
 Bearer, Save Slot과 Companion ID는 현재 Demo 제품 Scope에 맞춰 `AIRE_WEB / demo-slot-1 / mako`로 고정되어 있습니다.
 

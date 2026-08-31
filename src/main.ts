@@ -434,6 +434,9 @@ let isListingMemoryCandidates = false;
 let isLoadingMemoryCandidateDetail = false;
 let memoryMutation: "update" | "delete" | "reset" | "candidate" | null = null;
 let memoryLastAction: "list" | "search" = "list";
+let memoryRefreshTimer: number | null = null;
+
+const MEMORY_WORKER_REFRESH_DELAY_MS = 6_500;
 
 function setChatState(state: ChatUiState, message?: string): void {
   companionApp.dataset.chatState = state;
@@ -1846,6 +1849,33 @@ async function loadMemories(action: "list" | "search" = memoryLastAction): Promi
   }
 }
 
+function refreshLoadedMemoryViewsAfterChat(): void {
+  // An already-open list otherwise keeps stale use_count/last_used_at values.
+  // Refresh once immediately for recalled memories and once after the backend's
+  // normal memory-worker interval for a newly shared memory or review candidate.
+  if (!isMemoryLoaded && !isMemoryCandidatesLoaded) {
+    return;
+  }
+  if (isMemoryLoaded && memoryLastAction === "list") {
+    void loadMemories("list");
+  }
+  if (isMemoryCandidatesLoaded) {
+    void loadMemoryCandidates();
+  }
+  if (memoryRefreshTimer !== null) {
+    window.clearTimeout(memoryRefreshTimer);
+  }
+  memoryRefreshTimer = window.setTimeout(() => {
+    memoryRefreshTimer = null;
+    if (isMemoryLoaded && memoryLastAction === "list") {
+      void loadMemories("list");
+    }
+    if (isMemoryCandidatesLoaded) {
+      void loadMemoryCandidates();
+    }
+  }, MEMORY_WORKER_REFRESH_DELAY_MS);
+}
+
 function setMemoryInlineError(notice: HTMLElement, message: string): void {
   notice.textContent = message;
   notice.dataset.state = "error";
@@ -2252,6 +2282,7 @@ chatForm.addEventListener("submit", (event) => {
         return;
       }
       appendMessage(response.display_text, "companion");
+      refreshLoadedMemoryViewsAfterChat();
       if (response.offline_task_id !== null) {
         setChatState("success", "작업 요청을 등록했어요. 작업 목록에서 확인하고 있어요.");
         void reconcileChatCreatedTask(response.offline_task_id);
